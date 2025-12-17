@@ -1,0 +1,563 @@
+  <!DOCTYPE html>
+  <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Administrador - Panel</title>
+      <style>
+        :root {
+          --bg-a: #071033;
+          --bg-b: #0f2a5c;
+          --accent: #e83b11;
+          /* panel background: slightly darker than page background */
+          --card-bg: #041226;
+          --card-bg-light: #0b3758; /* lighter inner color for radial */
+          --card-bg-dark: #041226; /* darker outer color for radial */
+          --muted: rgba(255,255,255,0.85);
+          --text-light: #ffffff;
+          --header-height: 88px;
+        }
+        * {
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+            'Helvetica Neue', Arial, sans-serif;
+        }
+        body {
+          margin: 0;
+          min-height: 100vh;
+          background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+          color: #0f172a;
+        }
+        .topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          background: transparent;
+        }
+        /* full-width solid dashboard bar fixed to top */
+        .dashboard {
+          /* circular gradient: lighter toward the interior */
+          background: radial-gradient(circle at 22% 50%, var(--card-bg-light) 0%, var(--card-bg-dark) 100%);
+          width: 100vw;
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: var(--header-height);
+          border-radius: 0;
+          padding: 0 0;
+          box-shadow: 0 6px 20px rgba(2, 6, 23, 0.12);
+          border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+          z-index: 100;
+        }
+        /* make header full-width; logo/title aligned left, hamburger right */
+        .dash-row {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start; /* align items to the left */
+          gap: 20px; /* space between logo/title and hamburger */
+          width: 100%;
+          padding: 0 16px; /* slight inner padding, logo/title positioned left */
+          height: 100%;
+        }
+        .logo-box {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .logo-pill {
+          width: 164px;
+          height: 48px;
+          background: #fff;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          box-shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+          border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+        .logo-pill img {
+          max-width: 100%;
+          height: auto;
+          display: block;
+        }
+        .dashboard-title {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--text-light);
+        }
+        .hamburger {
+          position: relative;
+        }
+        .hambtn {
+          background: transparent;
+          border: 0;
+          color: var(--text-light);
+          font-size: 22px;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 8px;
+        }
+        /* side drawer for navigation */
+        .side-drawer {
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          width: 280px;
+          /* circular gradient for drawer as well (lighter inward) */
+          background: radial-gradient(circle at 10% 50%, var(--card-bg-light) 0%, var(--card-bg-dark) 100%);
+          color: var(--text-light);
+          transform: translateX(-100%);
+          transition: transform 280ms ease;
+          z-index: 220;
+          box-shadow: 4px 0 24px rgba(2,6,23,0.12);
+          border-right: 1px solid rgba(0,0,0,0.18);
+          padding: 16px;
+        }
+        .side-drawer.show { transform: translateX(0); }
+        .drawer-close { background:transparent;border:0;font-size:20px;position:absolute;right:12px;top:10px;cursor:pointer;color:var(--text-light) }
+        .drawer-list { list-style:none;margin:48px 0 0;padding:0 }
+        .drawer-list a{display:block;padding:12px 8px;color:var(--text-light);text-decoration:none;font-weight:600;border-radius:6px}
+        .drawer-list a:hover{background:rgba(255,255,255,0.06)}
+        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.32);z-index:210;opacity:0;visibility:hidden;transition:opacity 200ms}
+        .drawer-overlay.show{opacity:1;visibility:visible}
+        .content {
+          width: 100vw;
+          max-width: none;
+          margin: 0; /* full-bleed content */
+          padding: 20px 24px;
+          background: rgba(255, 255, 255, 0.06);
+          border-radius: 0;
+          color: #f8fafc;
+          margin-top: calc(var(--header-height));
+          box-sizing: border-box;
+        }
+        .title-panel{
+          width: 92%;
+          max-width: 1100px; /* a little less than full content width */
+          margin: 0 auto 18px auto;
+          background: rgba(255,255,255,0.04);
+          padding: 18px 22px;
+          border-radius: 10px;
+          text-align: center; /* center the title text */
+          box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+          border: 1px solid rgba(255,255,255,0.03);
+        }
+        .welcome-title{
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--text-light);
+          margin: 0 0 18px 0;
+          text-align: left;
+          padding: 0 24px; /* safe horizontal padding so text doesn't go offscreen */
+          box-sizing: border-box;
+        }
+        /* info area: center a single panel (map) and keep spacing */
+        .info-grid{
+          display:flex;
+          justify-content:center;
+          align-items:flex-start;
+          gap:16px;
+          padding: 12px 24px 20px 24px;
+          box-sizing: border-box;
+        }
+        .info-panel{
+          background: rgba(255,255,255,0.10); /* single color, 10% transparent */
+          border-radius: 10px;
+          padding: 20px;
+          min-height: 260px; /* increased height for all panels */
+          color: var(--text-light);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+        }
+        /* variable list with colored bars */
+        .var-list{width:100%;display:flex;flex-direction:column;gap:12px}
+        .var-item{display:flex;flex-direction:column;gap:6px}
+        .var-row{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--text-light);font-size:0.95rem}
+        .bar-track{width:100%;height:12px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden}
+        .bar-fill{height:100%;border-radius:8px 0 0 8px}
+        .bar-temp{background:linear-gradient(90deg,#ef7a3a,#f05a3a)}
+        .bar-prec{background:linear-gradient(90deg,#4aa3ff,#2b82ff)}
+        .bar-wind{background:linear-gradient(90deg,#39c0a0,#0fb0a0)}
+        .bar-hum{background:linear-gradient(90deg,#6ee7b7,#34d399)}
+        .bar-pres{background:linear-gradient(90deg,#b085ff,#7c3aed)}
+        .wind-direction{font-weight:600;font-size:0.9rem;color:var(--muted)}
+        .info-panel.map-panel{padding:0;overflow:hidden;width:100%;max-width:1200px;height:calc(100vh - var(--header-height) - 32px);border-radius:10px}
+        .info-panel.map-panel iframe{width:100%;height:100%;border:0;display:block;border-radius:10px}
+        .panel-subtitle{font-size:1rem;font-weight:700;color:var(--muted);margin:6px 0 12px 0;padding:0 24px}
+        .extreme-line{padding:6px 24px 10px 24px;font-size:0.98rem;color:var(--text-light);font-weight:700}
+        .extreme-var{margin-left:8px;font-weight:800;display:inline-block}
+        .extreme-name{font-weight:900}
+        .extreme-value{margin-left:8px;color:var(--muted);font-weight:700}
+        .info-panel.vars-panel{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:20px}
+        .panel-subtitle{padding:0;margin:8px 0 12px 0;text-align:left}
+        @media (max-width:700px){
+          .info-grid{grid-template-columns: 1fr}
+        }
+        /* admin logo placed on the right of the dashboard */
+        .adminlogo{
+          width:72px;
+          height:auto;
+          display:block;
+        }
+        .admin-area{position:relative;display:flex;align-items:center;margin-left:auto}
+        .admin-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:140px;background:rgba(255,255,255,0.04);color:var(--text-light);border-radius:8px;padding:6px;box-shadow:0 6px 18px rgba(2,6,23,0.12);display:none;z-index:250}
+        .admin-menu a{display:block;padding:8px 10px;color:var(--text-light);text-decoration:none;font-weight:600}
+        .admin-menu a:hover{background:rgba(255,255,255,0.06)}
+        .admin-menu.show{display:block}
+        @media (max-width: 600px) {
+          .logo-pill {
+            width: 56px;
+            height: 40px;
+            padding: 6px;
+          }
+          .dashboard {
+            margin: 12px;
+          }
+        }
+        /* content title styling (left-aligned) */
+        .welcome-title{
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--text-light);
+          margin: 0 0 18px 0;
+          text-align: left;
+          padding: 0 24px; /* safe horizontal padding so text doesn't go offscreen */
+          box-sizing: border-box;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="topbar">
+        <div style="width:100%; padding:0;">
+          <div class="content" aria-live="polite">
+            <h1 class="welcome-title"></h1>
+            <div class="info-grid" aria-label="Paneles informativos">
+              <div class="info-panel map-panel">
+                <iframe
+                  src="https://embed.ventusky.com/?p=18.7357,-70.1627,6&l=satellite"
+                  title="Mapa República Dominicana"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
+              </div>
+            </div>
+          </div>
+          <div class="dashboard">
+            <div class="dash-row">
+              <div class="hamburger">
+                <button
+                  class="hambtn"
+                  id="hambBtn"
+                  aria-expanded="false"
+                  aria-controls="sideDrawer"
+                  aria-label="Abrir menú"
+                >
+                  ☰
+                </button>
+              </div>
+              <div class="logo-box">
+              <div class="logo-pill" aria-hidden="true">
+                <a href="#" id="homeLink" style="display: block;">
+                  <img src="../logo.png" alt="Indomet" />
+                </a>
+              </div>
+                <div>
+                  <div class="dashboard-title">Emitir Alerta</div>
+                  <div style="font-size: 0.9rem; color: var(--muted)">
+                    Predimatic
+                  </div>
+                </div>
+              </div>
+              <div class="admin-area">
+                <img src="../adminlogo.png" alt="Admin logo" class="adminlogo" id="adminLogo" aria-haspopup="true" aria-expanded="false" />
+                <div class="admin-menu" id="adminMenu" role="menu" aria-hidden="true">
+                  <a href="../index.html" id="adminSignOut" role="menuitem">Cerrar sesión</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+          <!-- side drawer markup -->
+          <nav id="sideDrawer" class="side-drawer" aria-hidden="true" aria-label="Menú">
+            <button class="drawer-close" id="drawerClose" aria-label="Cerrar menú">✕</button>
+            <ul class="drawer-list">
+                <li><a href="adminpage.html">Volver a la Pagina de Inicio</a></li>
+                <li><a href="gespage.html">Gestionar Usuarios</a></li>
+                <li><a href="verpage.html">Ver Mapa Interactivo</a></li>
+                <li><a href="suppage.html">Supervisar Anomalía</a></li>
+                <li><a href="anapage.html">Analizar Datos Meteorológico</a></li>
+                <li><a href="emipage.html">Emitir Alerta</a></li>
+                <li><a href="propage.html">Procesar Datos Meteorológicos</a></li>
+                <li><a href="../index.html" id="signOut">Cerrar sesión</a></li>
+              </ul>
+          </nav>
+          <div id="drawerOverlay" class="drawer-overlay" tabindex="-1" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          const btn = document.getElementById('hambBtn');
+          const drawer = document.getElementById('sideDrawer');
+          const overlay = document.getElementById('drawerOverlay');
+          const closeBtn = document.getElementById('drawerClose');
+
+          function openDrawer(){
+            drawer.classList.add('show');
+            overlay.classList.add('show');
+            drawer.setAttribute('aria-hidden','false');
+            btn.setAttribute('aria-expanded','true');
+            overlay.focus();
+          }
+          function closeDrawer(){
+            drawer.classList.remove('show');
+            overlay.classList.remove('show');
+            drawer.setAttribute('aria-hidden','true');
+            btn.setAttribute('aria-expanded','false');
+            btn.focus();
+          }
+
+          btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            openDrawer();
+          });
+          closeBtn.addEventListener('click', closeDrawer);
+          overlay.addEventListener('click', closeDrawer);
+          document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeDrawer(); });
+
+          // admin logo menu: toggle small menu with Sign out
+          const adminLogo = document.getElementById('adminLogo');
+          const adminMenu = document.getElementById('adminMenu');
+          const adminSignOut = document.getElementById('adminSignOut');
+
+          function openAdminMenu(){
+            adminMenu.classList.add('show');
+            adminMenu.setAttribute('aria-hidden','false');
+            adminLogo.setAttribute('aria-expanded','true');
+          }
+          function closeAdminMenu(){
+            adminMenu.classList.remove('show');
+            adminMenu.setAttribute('aria-hidden','true');
+            adminLogo.setAttribute('aria-expanded','false');
+          }
+
+          if(adminLogo){
+            adminLogo.addEventListener('click', function(e){
+              e.stopPropagation();
+              if(adminMenu.classList.contains('show')) closeAdminMenu(); else openAdminMenu();
+            });
+            // close when clicking outside
+            document.addEventListener('click', function(e){ if(!adminMenu.contains(e.target) && !adminLogo.contains(e.target)) closeAdminMenu(); });
+            document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeAdminMenu(); });
+          }
+          if(adminSignOut){
+            adminSignOut.addEventListener('click', function(){ closeAdminMenu(); /* link will navigate */ });
+          }
+        })();
+      </script>
+      <script>
+        (function () {
+          // Defaults and scales for converting values to percent widths
+          const defaults = { temp: 28, precip: 12, wind: 15, hum: 78, pres: 1012 };
+          const scales = {
+            temp: v => (v / 40) * 100, // 0-40°C
+            precip: v => (v / 100) * 100, // 0-100mm
+            wind: v => (v / 60) * 100, // 0-60 km/h
+            hum: v => v, // 0-100%
+            pres: v => ((v - 980) / (1040 - 980)) * 100 // 980-1040 hPa
+          };
+
+          function clamp(n){ return Math.max(0, Math.min(100, n)); }
+
+          function parseNumberFromText(key, text){
+            if(key==='temp') return parseFloat(text);
+            if(key==='precip') return parseFloat(text);
+            if(key==='wind') return parseFloat(text);
+            if(key==='hum') return parseFloat(text);
+            if(key==='pres') return parseFloat(text);
+            return parseFloat(text)||0;
+          }
+
+          function formatValue(key, v){
+            if(key==='temp') return `${v.toFixed(1)} °C`;
+            if(key==='precip') return `${Math.round(v)} mm (24 h)`;
+            if(key==='wind') return `${Math.round(v)} km/h · ENE`;
+            if(key==='hum') return `${Math.round(v)} %`;
+            if(key==='pres') return `${Math.round(v)} hPa`;
+            return v;
+          }
+
+          function updateAndSort(){
+            const list = document.querySelector('.var-list');
+            if(!list) return;
+            const items = Array.from(list.querySelectorAll('.var-item'));
+
+            // record first positions (FLIP)
+            const firstRects = new Map();
+            items.forEach(it => firstRects.set(it, it.getBoundingClientRect()));
+
+            // update values and compute deviation
+            items.forEach(item => {
+              const key = item.dataset.key;
+              const def = parseFloat(item.dataset.default);
+              let cur = parseFloat(item.dataset.current) || def;
+
+              // random change ±5%
+              const delta = (Math.random() * 0.10) - 0.05;
+              const next = cur * (1 + delta);
+              item.dataset.current = next.toFixed(3);
+
+              // update text
+              const valSpan = item.querySelector('.var-value');
+              if(valSpan){
+                valSpan.textContent = formatValue(key, next);
+              }
+
+              // update bar width
+              const fill = item.querySelector('.bar-fill');
+              if(fill){
+                const pct = clamp(scales[key](next));
+                fill.style.width = pct + '%';
+              }
+
+              // compute deviation relative to default (fraction)
+              const deviation = Math.abs(next - def) / (def || 1);
+              item.dataset.deviation = deviation;
+            });
+
+            // sort items by deviation (largest first)
+            const sorted = items.slice().sort((a,b) => parseFloat(b.dataset.deviation) - parseFloat(a.dataset.deviation));
+
+            // update extreme-line display (most deviant variable) and color its name
+            const extremeSpan = document.querySelector('.extreme-var');
+            const colorMap = { temp:'#f05a3a', precip:'#2b82ff', wind:'#0fb0a0', hum:'#34d399', pres:'#7c3aed' };
+            if(extremeSpan){
+              if(sorted.length){
+                const top = sorted[0];
+                const label = (top.querySelector('.var-row span')||{textContent:'--'}).textContent;
+                const valText = (top.querySelector('.var-value')||{textContent:'--'}).textContent;
+                const key = top.dataset.key;
+                extremeSpan.innerHTML = `<span class="extreme-name">${label}</span><span class="extreme-value"> — ${valText}</span>`;
+                const nameEl = extremeSpan.querySelector('.extreme-name');
+                if(nameEl) nameEl.style.color = colorMap[key] || '';
+              } else {
+                extremeSpan.textContent = '—';
+              }
+            }
+
+            // apply reordering with FLIP animation
+            // append in new order, but animate items from their previous positions
+            sorted.forEach(item => list.appendChild(item));
+
+            // now compute last positions and animate
+            const lastRects = new Map();
+            sorted.forEach(it => lastRects.set(it, it.getBoundingClientRect()));
+
+            sorted.forEach(it => {
+              const first = firstRects.get(it);
+              const last = lastRects.get(it);
+              if(!first || !last) return;
+              const dy = first.top - last.top;
+              const dx = first.left - last.left;
+              // if no movement, skip
+              if(Math.abs(dy) < 1 && Math.abs(dx) < 1) return;
+
+              // invert
+              it.style.transition = 'none';
+              it.style.transform = `translate(${dx}px, ${dy}px)`;
+
+              // play
+              requestAnimationFrame(() => {
+                it.style.transition = 'transform 420ms cubic-bezier(.2,.9,.2,1)';
+                it.style.transform = '';
+              });
+
+              // cleanup after transition
+              const cleanup = () => {
+                it.style.transition = '';
+                it.style.transform = '';
+                it.removeEventListener('transitionend', cleanup);
+              };
+              it.addEventListener('transitionend', cleanup);
+            });
+          }
+
+          // initial run (align bars to defaults)
+          (function init(){
+            const list = document.querySelector('.var-list');
+            if(!list) return;
+            const items = Array.from(list.querySelectorAll('.var-item'));
+            items.forEach(item=>{
+              const key = item.dataset.key;
+              const def = parseFloat(item.dataset.default);
+              item.dataset.current = def;
+              const valSpan = item.querySelector('.var-value');
+              if(valSpan) valSpan.textContent = formatValue(key, def);
+              const fill = item.querySelector('.bar-fill');
+              if(fill) fill.style.width = clamp(scales[key](def)) + '%';
+              item.dataset.deviation = 0;
+            });
+          })();
+
+          // run every 5 seconds
+          setInterval(updateAndSort, 5000);
+        })();
+    </script>
+    <script>
+      // Role-based navigation functionality
+      document.addEventListener('DOMContentLoaded', function() {
+        // Function to get home page based on user role
+        function getHomePageForRole() {
+          const userRole = localStorage.getItem('userRole');
+          const storedHomePage = localStorage.getItem('userHomePage');
+
+          // If we have a stored home page, extract just the filename
+          if (storedHomePage) {
+            // Extract filename from path like "pages/adminpage.html" -> "adminpage.html"
+            const parts = storedHomePage.split('/');
+            return parts[parts.length - 1];
+          }
+
+          // Fallback: determine based on role
+          switch(userRole) {
+            case 'Administrador':
+              return 'adminpage.html';
+            case 'Operador':
+              return 'oppage.html';
+            case 'Analista':
+              return 'anpage.html';
+            case 'Coordinador':
+              return 'copage.html';
+            default:
+              return '../index.html'; // Fallback to login if no role found
+          }
+        }
+
+        // Set up logo click handler
+        const homeLink = document.getElementById('homeLink');
+        if (homeLink) {
+          homeLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const homePage = getHomePageForRole();
+            window.location.href = homePage;
+          });
+        }
+
+        // Set up "Volver a la Pagina de Inicio" menu item
+        const homeMenuItem = document.querySelector('a[href="adminpage.html"]');
+        if (homeMenuItem) {
+          homeMenuItem.addEventListener('click', function(e) {
+            e.preventDefault();
+            const homePage = getHomePageForRole();
+            window.location.href = homePage;
+          });
+        }
+      });
+    </script>
+  </body>
+  </html>
