@@ -1,0 +1,724 @@
+!DOCTYPE html>
+  <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Administrador - Panel</title>
+      <style>
+        :root {
+          --bg-a: #071033;
+          --bg-b: #0f2a5c;
+          --accent: #e83b11;
+          /* panel background: slightly darker than page background */
+          --card-bg: #041226;
+          --card-bg-light: #0b3758; /* lighter inner color for radial */
+          --card-bg-dark: #041226; /* darker outer color for radial */
+          --muted: rgba(255,255,255,0.85);
+          --text-light: #ffffff;
+          --header-height: 88px;
+        }
+        * {
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+            'Helvetica Neue', Arial, sans-serif;
+        }
+        body {
+          margin: 0;
+          min-height: 100vh;
+          background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+          color: #ffffff;
+        }
+        .topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          background: transparent;
+        }
+        /* full-width solid dashboard bar fixed to top */
+        .dashboard {
+          /* circular gradient: lighter toward the interior */
+          background: radial-gradient(circle at 22% 50%, var(--card-bg-light) 0%, var(--card-bg-dark) 100%);
+          width: 100vw;
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: var(--header-height);
+          border-radius: 0;
+          padding: 0 0;
+          box-shadow: 0 6px 20px rgba(2, 6, 23, 0.12);
+          border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+          z-index: 100;
+        }
+        /* make header full-width; logo/title aligned left, hamburger right */
+        .dash-row {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start; /* align items to the left */
+          gap: 20px; /* space between logo/title and hamburger */
+          width: 100%;
+          padding: 0 16px; /* slight inner padding, logo/title positioned left */
+          height: 100%;
+        }
+        .logo-box {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .logo-pill {
+          width: 164px;
+          height: 48px;
+          background: #fff;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          box-shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+          border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+        .logo-pill img {
+          max-width: 100%;
+          height: auto;
+          display: block;
+        }
+        .dashboard-title {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--text-light);
+        }
+        .hamburger {
+          position: relative;
+        }
+        .hambtn {
+          background: transparent;
+          border: 0;
+          color: var(--text-light);
+          font-size: 22px;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 8px;
+        }
+        /* side drawer for navigation */
+        .side-drawer {
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          width: 280px;
+          /* circular gradient for drawer as well (lighter inward) */
+          background: radial-gradient(circle at 10% 50%, var(--card-bg-light) 0%, var(--card-bg-dark) 100%);
+          color: var(--text-light);
+          transform: translateX(-100%);
+          transition: transform 280ms ease;
+          z-index: 220;
+          box-shadow: 4px 0 24px rgba(2,6,23,0.12);
+          border-right: 1px solid rgba(0,0,0,0.18);
+          padding: 16px;
+        }
+        .side-drawer.show { transform: translateX(0); }
+        .drawer-close { background:transparent;border:0;font-size:20px;position:absolute;right:12px;top:10px;cursor:pointer;color:var(--text-light) }
+        .drawer-list { list-style:none;margin:48px 0 0;padding:0 }
+        .drawer-list a{display:block;padding:12px 8px;color:var(--text-light);text-decoration:none;font-weight:600;border-radius:6px}
+        .drawer-list a:hover{background:rgba(255,255,255,0.06)}
+        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.32);z-index:210;opacity:0;visibility:hidden;transition:opacity 200ms}
+        .drawer-overlay.show{opacity:1;visibility:visible}
+        .content {
+          width: 100vw;
+          max-width: none;
+          margin: 0; /* full-bleed content */
+          padding: 20px 24px;
+          background: rgba(255, 255, 255, 0.06);
+          border-radius: 0;
+          color: #f8fafc;
+          margin-top: calc(var(--header-height));
+          box-sizing: border-box;
+        }
+        .title-panel{
+          width: 92%;
+          max-width: 1100px; /* a little less than full content width */
+          margin: 0 auto 18px auto;
+          background: rgba(255,255,255,0.04);
+          padding: 18px 22px;
+          border-radius: 10px;
+          text-align: center; /* center the title text */
+          box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+          border: 1px solid rgba(255,255,255,0.03);
+        }
+        .welcome-title{
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--text-light);
+          margin: 0 0 18px 0;
+          text-align: left;
+          padding: 0 24px; /* safe horizontal padding so text doesn't go offscreen */
+          box-sizing: border-box;
+        }
+        /* info area: center a single panel (map) and keep spacing */
+        .info-grid{
+          display:flex;
+          justify-content:center;
+          align-items:flex-start;
+          gap:16px;
+          padding: 12px 24px 20px 24px;
+          box-sizing: border-box;
+        }
+        .info-panel{
+          background: rgba(255,255,255,0.10); /* single color, 10% transparent */
+          border-radius: 10px;
+          padding: 20px;
+          min-height: 260px; /* increased height for all panels */
+          color: var(--text-light);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+        }
+        /* CRUD User Management Panel */
+        .crud-panel {
+          width: 100%;
+          max-width: 1000px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .crud-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+        }
+        .crud-title {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--text-light);
+        }
+        .add-user-btn {
+          background: var(--accent);
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: background 0.2s;
+        }
+        .add-user-btn:hover {
+          background: #d4350f;
+        }
+        .user-table {
+          width: 100%;
+          border-collapse: collapse;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        .user-table th, .user-table td {
+          padding: 12px 15px;
+          text-align: left;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .user-table th {
+          background: rgba(255, 255, 255, 0.1);
+          font-weight: 700;
+          color: var(--text-light);
+        }
+        .user-table tr:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
+        .action-btn {
+          padding: 6px 12px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.85rem;
+          font-weight: 600;
+          margin-right: 5px;
+        }
+        .edit-btn {
+          background: #4a90e2;
+          color: white;
+        }
+        .delete-btn {
+          background: #e74c3c;
+          color: white;
+        }
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+        .modal {
+          background: var(--card-bg);
+          padding: 25px;
+          border-radius: 10px;
+          width: 400px;
+          max-width: 90%;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        .modal-title {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: var(--text-light);
+        }
+        .close-btn {
+          background: none;
+          border: none;
+          color: var(--text-light);
+          font-size: 1.5rem;
+          cursor: pointer;
+        }
+        .form-group {
+          margin-bottom: 15px;
+        }
+        .form-label {
+          display: block;
+          margin-bottom: 5px;
+          color: var(--text-light);
+          font-weight: 600;
+        }
+        .form-input {
+          width: 100%;
+          padding: 10px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--text-light);
+        }
+        .form-input:focus {
+          outline: none;
+          border-color: var(--accent);
+        }
+        .form-select {
+          width: 100%;
+          padding: 10px;
+          border-radius: 6px;
+          border: 1px solid rgba(114, 111, 156, 0.2);
+          background: rgba(92, 92, 145, 0.103);
+          color: var(--text-light);
+        }
+
+        .option-select{
+          background: var(--card-bg);
+          color: var(--text-light);
+        }
+        .modal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 20px;
+        }
+        .save-btn {
+          background: #4a90e2;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+        .cancel-btn {
+          background: var(--accent);
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+        .info-panel.crud-panel-container {
+          padding: 0;
+          min-height: auto;
+          display: block;
+        }
+        @media (max-width:700px){
+          .info-grid{grid-template-columns: 1fr}
+        }
+        /* admin logo placed on the right of the dashboard */
+        .adminlogo{
+          width:72px;
+          height:auto;
+          display:block;
+        }
+        .admin-area{position:relative;display:flex;align-items:center;margin-left:auto}
+        .admin-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:140px;background:rgba(255,255,255,0.04);color:var(--text-light);border-radius:8px;padding:6px;box-shadow:0 6px 18px rgba(2,6,23,0.12);display:none;z-index:250}
+        .admin-menu a{display:block;padding:8px 10px;color:var(--text-light);text-decoration:none;font-weight:600}
+        .admin-menu a:hover{background:rgba(255,255,255,0.06)}
+        .admin-menu.show{display:block}
+        @media (max-width: 600px) {
+          .logo-pill {
+            width: 56px;
+            height: 40px;
+            padding: 6px;
+          }
+          .dashboard {
+            margin: 12px;
+          }
+        }
+        /* content title styling (left-aligned) */
+        .welcome-title{
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--text-light);
+          margin: 0 0 18px 0;
+          text-align: left;
+          padding: 0 24px; /* safe horizontal padding so text doesn't go offscreen */
+          box-sizing: border-box;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="topbar">
+        <div style="width:100%; padding:0;">
+          <div class="content" aria-live="polite">
+            <h1 class="welcome-title"></h1>
+          <div class="info-grid" aria-label="Paneles informativos">
+              <div class="info-panel crud-panel-container">
+                <div class="crud-panel">
+                  <div class="crud-header">
+                    <div class="crud-title">Gestión de Usuarios</div>
+                    <button class="add-user-btn" id="addUserBtn">+ Añadir Usuario</button>
+                  </div>
+                  <table class="user-table" id="userTable">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                      <!-- Users will be loaded here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="dashboard">
+            <div class="dash-row">
+              <div class="hamburger">
+                <button
+                  class="hambtn"
+                  id="hambBtn"
+                  aria-expanded="false"
+                  aria-controls="sideDrawer"
+                  aria-label="Abrir menú"
+                >
+                  ☰
+                </button>
+              </div>
+              <div class="logo-box">
+                <div class="logo-pill" aria-hidden="true">
+                  <a href="../Pages/adminpage.html" style="display: block;">
+                    <img src="../logo.png" alt="Indomet" />
+                  </a>
+                </div>
+                <div>
+                  <div class="dashboard-title">Gestionar Usuarios</div>
+                  <div style="font-size: 0.9rem; color: var(--muted)">
+                    Predimatic
+                  </div>
+                </div>
+              </div>
+              <div class="admin-area">
+                <img src="../adminlogo.png" alt="Admin logo" class="adminlogo" id="adminLogo" aria-haspopup="true" aria-expanded="false" />
+                <div class="admin-menu" id="adminMenu" role="menu" aria-hidden="true">
+                  <a href="../index.html" id="adminSignOut" role="menuitem">Cerrar sesión</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+          <!-- side drawer markup -->
+          <nav id="sideDrawer" class="side-drawer" aria-hidden="true" aria-label="Menú">
+            <button class="drawer-close" id="drawerClose" aria-label="Cerrar menú">✕</button>
+            <ul class="drawer-list">
+                <li><a href="adminpage.html">Volver a la Pagina de Inicio</a></li>
+                <li><a href="gespage.html">Gestionar Usuarios</a></li>
+                <li><a href="verpage.html">Ver Mapa Interactivo</a></li>
+                <li><a href="suppage.html">Supervisar Anomalía</a></li>
+                <li><a href="anapage.html">Analizar Datos Meteorológico</a></li>
+                <li><a href="emipage.html">Emitir Alerta</a></li>
+                <li><a href="propage.html">Procesar Datos Meteorológicos</a></li>
+                <li><a href="../index.html" id="signOut">Cerrar sesión</a></li>
+              </ul>
+          </nav>
+          <div id="drawerOverlay" class="drawer-overlay" tabindex="-1" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          const btn = document.getElementById('hambBtn');
+          const drawer = document.getElementById('sideDrawer');
+          const overlay = document.getElementById('drawerOverlay');
+          const closeBtn = document.getElementById('drawerClose');
+
+          function openDrawer(){
+            drawer.classList.add('show');
+            overlay.classList.add('show');
+            drawer.setAttribute('aria-hidden','false');
+            btn.setAttribute('aria-expanded','true');
+            overlay.focus();
+          }
+          function closeDrawer(){
+            drawer.classList.remove('show');
+            overlay.classList.remove('show');
+            drawer.setAttribute('aria-hidden','true');
+            btn.setAttribute('aria-expanded','false');
+            btn.focus();
+          }
+
+          btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            openDrawer();
+          });
+          closeBtn.addEventListener('click', closeDrawer);
+          overlay.addEventListener('click', closeDrawer);
+          document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeDrawer(); });
+
+          // admin logo menu: toggle small menu with Sign out
+          const adminLogo = document.getElementById('adminLogo');
+          const adminMenu = document.getElementById('adminMenu');
+          const adminSignOut = document.getElementById('adminSignOut');
+
+          function openAdminMenu(){
+            adminMenu.classList.add('show');
+            adminMenu.setAttribute('aria-hidden','false');
+            adminLogo.setAttribute('aria-expanded','true');
+          }
+          function closeAdminMenu(){
+            adminMenu.classList.remove('show');
+            adminMenu.setAttribute('aria-hidden','true');
+            adminLogo.setAttribute('aria-expanded','false');
+          }
+
+          if(adminLogo){
+            adminLogo.addEventListener('click', function(e){
+              e.stopPropagation();
+              if(adminMenu.classList.contains('show')) closeAdminMenu(); else openAdminMenu();
+            });
+            // close when clicking outside
+            document.addEventListener('click', function(e){ if(!adminMenu.contains(e.target) && !adminLogo.contains(e.target)) closeAdminMenu(); });
+            document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeAdminMenu(); });
+          }
+          if(adminSignOut){
+            adminSignOut.addEventListener('click', function(){ closeAdminMenu(); /* link will navigate */ });
+          }
+        })();
+      </script>
+      <script>
+        // CRUD User Management System
+        (function () {
+          // DOM Elements
+          const addUserBtn = document.getElementById('addUserBtn');
+          const userTableBody = document.getElementById('userTableBody');
+          const content = document.querySelector('.content');
+
+          // Modal elements (will be created dynamically)
+          let modalOverlay = null;
+          let modal = null;
+          let userForm = null;
+          let currentEditingId = null;
+
+          // Predefined users
+          const predefinedUsers = [
+            { id: 1, name: 'Juan Pérez', email: 'operador@test.com', role: 'Operador' },
+            { id: 2, name: 'María García', email: 'coordinador@test.com', role: 'Coordinador' },
+            { id: 3, name: 'Carlos Rodríguez', email: 'analista@test.com', role: 'Analista' }
+          ];
+
+          // User data storage
+          let users = [...predefinedUsers];
+
+          // Initialize the user table
+          function renderUserTable() {
+            userTableBody.innerHTML = '';
+
+            users.forEach(user => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+                <td>${user.role}</td>
+                <td>
+                  <button class="action-btn edit-btn" data-id="${user.id}">Editar</button>
+                  <button class="action-btn delete-btn" data-id="${user.id}">Eliminar</button>
+                </td>
+              `;
+              userTableBody.appendChild(row);
+            });
+
+            // Add event listeners to action buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+              btn.addEventListener('click', handleEditUser);
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+              btn.addEventListener('click', handleDeleteUser);
+            });
+          }
+
+          // Handle add user button click
+          function handleAddUser() {
+            currentEditingId = null;
+            showUserModal('Añadir Usuario');
+          }
+
+          // Handle edit user button click
+          function handleEditUser(e) {
+            const userId = parseInt(e.target.getAttribute('data-id'));
+            const user = users.find(u => u.id === userId);
+            if (user) {
+              currentEditingId = userId;
+              showUserModal('Editar Usuario', user);
+            }
+          }
+
+          // Handle delete user button click
+          function handleDeleteUser(e) {
+            const userId = parseInt(e.target.getAttribute('data-id'));
+            if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
+              users = users.filter(u => u.id !== userId);
+              renderUserTable();
+            }
+          }
+
+          // Show user modal
+          function showUserModal(title, userData = null) {
+            // Create modal overlay if it doesn't exist
+            if (!modalOverlay) {
+              createModal();
+            }
+
+            // Set modal title
+            modal.querySelector('.modal-title').textContent = title;
+
+            // Set form values
+            const nameInput = modal.querySelector('#userName');
+            const emailInput = modal.querySelector('#userEmail');
+            const roleSelect = modal.querySelector('#userRole');
+
+            if (userData) {
+              nameInput.value = userData.name;
+              emailInput.value = userData.email;
+              roleSelect.value = userData.role;
+            } else {
+              nameInput.value = '';
+              emailInput.value = '';
+              roleSelect.value = 'Operador';
+            }
+
+            // Show modal
+            modalOverlay.style.display = 'flex';
+          }
+
+          // Create modal structure
+          function createModal() {
+            // Create modal overlay
+            modalOverlay = document.createElement('div');
+            modalOverlay.className = 'modal-overlay';
+            modalOverlay.style.display = 'none';
+
+            // Create modal
+            modal = document.createElement('div');
+            modal.className = 'modal';
+
+            modal.innerHTML = `
+              <div class="modal-header">
+                <h2 class="modal-title">Modal Title</h2>
+                <button type="button" class="close-btn">&times;</button>
+              </div>
+              <form id="userForm">
+                <div class="form-group">
+                  <label for="userName" class="form-label">Nombre Completo</label>
+                  <input type="text" id="userName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label for="userEmail" class="form-label">Email</label>
+                  <input type="email" id="userEmail" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label for="userRole" class="form-label">Rol</label>
+                  <select id="userRole" class="form-select" required>
+                    <option value="Operador" class="option-select">Operador</option>
+                    <option value="Coordinador" class="option-select">Coordinador</option>
+                    <option value="Analista" class="option-select">Analista</option>
+                    <option value="Administrador" class="option-select">Administrador</option>
+                  </select>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="cancel-btn">Cancelar</button>
+                  <button type="submit" class="save-btn">Guardar</button>
+                </div>
+              </form>
+            `;
+
+            modalOverlay.appendChild(modal);
+            document.body.appendChild(modalOverlay);
+
+            // Add event listeners
+            modal.querySelector('.close-btn').addEventListener('click', () => {
+              modalOverlay.style.display = 'none';
+            });
+
+            modal.querySelector('.cancel-btn').addEventListener('click', () => {
+              modalOverlay.style.display = 'none';
+            });
+
+            userForm = modal.querySelector('#userForm');
+            userForm.addEventListener('submit', handleFormSubmit);
+          }
+
+          // Handle form submission
+          function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const name = userForm.querySelector('#userName').value;
+            const email = userForm.querySelector('#userEmail').value;
+            const role = userForm.querySelector('#userRole').value;
+
+            if (currentEditingId) {
+              // Edit existing user
+              users = users.map(user =>
+                user.id === currentEditingId ? { ...user, name, email, role } : user
+              );
+            } else {
+              // Add new user
+              const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+              users.push({ id: newId, name, email, role });
+            }
+
+            // Close modal and refresh table
+            modalOverlay.style.display = 'none';
+            renderUserTable();
+          }
+
+          // Initialize the CRUD system
+          function initCRUD() {
+            renderUserTable();
+            addUserBtn.addEventListener('click', handleAddUser);
+          }
+
+          // Initialize when DOM is loaded
+          document.addEventListener('DOMContentLoaded', initCRUD);
+        })();
+      </script>
+    </body>
+  </html>

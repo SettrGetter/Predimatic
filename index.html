@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar sesión</title>
+    <style>
+      :root {
+        --bg-a: #071033; /* brand navy deep */
+        --bg-b: #0f2a5c; /* brand navy gradient */
+        --accent: #c4af3b; /* brand orange */
+        --card-bg: #ffffff;
+        --muted: #6b7280;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        height: 100vh;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+        -webkit-font-smoothing: antialiased;
+        padding: 24px;
+        color: #111827;
+      }
+
+      .login-card {
+        background: var(--card-bg);
+        width: min(92%, 420px); /* slightly larger center card */
+        padding: 2rem;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
+        border: 1px solid rgba(15, 23, 42, 0.04);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .login-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.12);
+      }
+
+      /* subtle shake on failed login */
+      @keyframes shakeX {
+        0% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-6px);
+        }
+        50% {
+          transform: translateX(6px);
+        }
+        75% {
+          transform: translateX(-4px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+      .shake {
+        animation: shakeX 300ms ease;
+      }
+
+      .login-card h1 {
+        margin: 0 0 0.5rem;
+        text-align: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0f172a;
+      }
+      .subtitle {
+        margin: 0 0 1rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      /* logo shown inside card */
+      .card-logo {
+        display: block;
+        margin: 0 auto 1rem;
+        width: 160px;
+        height: auto;
+      }
+
+      .login-message {
+        text-align: center;
+        margin-top: 0.6rem;
+        font-size: 0.95rem;
+        color: #b91c1c; /* error color */
+        min-height: 1.1em;
+      }
+
+      .form-group {
+        margin-bottom: 0.9rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+
+      input {
+        width: 100%;
+        padding: 0.75rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid #e6e9ef;
+        font-size: 0.95rem;
+        background: #fff;
+        box-shadow: inset 0 -1px 0 rgba(16, 24, 40, 0.02);
+        transition: box-shadow 0.18s, border-color 0.18s;
+      }
+
+      input::placeholder {
+        color: #9ca3af;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 6px rgba(232, 59, 17, 0.08);
+      }
+
+      .form-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+      }
+
+      .forgot-link {
+        font-size: 0.85rem;
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .forgot-link:hover {
+        text-decoration: underline;
+        color: var(--accent);
+      }
+
+      button {
+        width: 100%;
+        margin-top: 0.6rem;
+        padding: 0.78rem;
+        border: 0;
+        border-radius: 10px;
+        background: linear-gradient(0deg, var(--accent), hwb(56 33% 8%));
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(67, 56, 202, 0.12);
+        transition: transform 0.12s, box-shadow 0.12s;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px rgba(232, 59, 17, 0.14);
+      }
+
+      .footer-text {
+        margin-top: 1rem;
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .footer-text a {
+        color: var(--accent);
+        text-decoration: underline; /* underline links by default */
+        font-weight: 600;
+      }
+      .footer-text a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 420px) {
+        .site-logo {
+          width: 56px;
+          height: 40px;
+        }
+        .login-card {
+          padding: 1.1rem;
+        }
+      }
+
+      /* hide old top-left logo container (we're embedding logo in the card) */
+      .site-logo {
+        display: none !important;
+      }
+      @media (max-width: 420px) {
+        .site-logo {
+          width: 72px;
+          height: 48px;
+          padding: 8px;
+          background-size: 70% auto;
+        }
+        .login-card {
+          padding: 1.1rem;
+        }
+      }
+
+      /* Stronger visible focus for keyboard users */
+      :focus-visible {
+        outline: 3px solid rgba(232, 59, 17, 0.18);
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+
+      input:focus-visible {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 6px rgba(232, 59, 17, 0.08);
+      }
+
+      button:focus-visible,
+      a:focus-visible {
+        box-shadow: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="login-card" role="main">
+      <img src="predimaticlogo.png" alt="Indomet" class="card-logo" />
+      <h1></h1>
+      <p></p>
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            autocomplete="email"
+            placeholder="nombre@dominio.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            autocomplete="current-password"
+            placeholder="********"
+            required
+          />
+        </div>
+        <div class="form-actions">
+          <div style="font-size: 0.88rem; color: var(--muted)">
+            <input
+              type="checkbox"
+              id="remember"
+              name="remember"
+              style="width: 14px; height: 14px; margin: 0"
+            />
+            <label
+              for="remember"
+              style="display: inline-block; margin-left: 8px"
+              >Mantener sesión</label
+            >
+          </div>
+          <div>
+            <a class="forgot-link" href="#">Se le olvido su contraseña?</a>
+          </div>
+        </div>
+        <button type="submit">Iniciar sesión</button>
+        <div
+          id="loginMessage"
+          class="login-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </form>
+
+      <div class="footer-text">
+        ¿No tiene una cuenta? <a href="#">Contáctanos</a>
+      </div>
+    </main>
+    <script>
+      (function () {
+        const users = {
+          'operador@demo.local': { role: 'Operador', url: 'pages/oppage.html' },
+          'analista@demo.local': { role: 'Analista', url: 'pages/anpage.html' },
+          'coordinador@demo.local': {
+            role: 'Coordinador',
+            url: 'pages/copage.html',
+          },
+          'administrador@demo.local': {
+            role: 'Administrador',
+            url: 'pages/adminpage.html',
+          },
+        };
+
+        function inferFromEmail(email) {
+          if (!email) return null;
+          if (email.includes('operador')) return 'pages/oppage.html';
+          if (email.includes('analista')) return 'pages/anpage.html';
+          if (email.includes('coordinador')) return 'pages/copage.html';
+          if (email.includes('admin') || email.includes('administrador'))
+            return 'pages/adminpage.html';
+          return null;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+          const form = document.getElementById('loginForm');
+          const message = document.getElementById('loginMessage');
+
+          if (!form) return;
+
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            message.textContent = '';
+
+            const email = ((form.email && form.email.value) || '')
+              .trim()
+              .toLowerCase();
+            const pwd = (form.password && form.password.value) || '';
+            const remember = !!(form.remember && form.remember.checked);
+
+            // require password input
+            if (!pwd) {
+              message.style.color = '#b91c1c';
+              message.textContent = 'Por favor introduzca su contraseña.';
+              form.password.focus();
+              return;
+            }
+
+            // determine role and target page
+            let roleName = null;
+            let target = null;
+            if (users[email]) {
+              roleName = users[email].role;
+              target = users[email].url;
+            } else {
+              if (email.includes('operador')) {
+                roleName = 'Operador';
+                target = 'pages/oppage.html';
+              } else if (email.includes('analista')) {
+                roleName = 'Analista';
+                target = 'pages/anpage.html';
+              } else if (email.includes('coordinador')) {
+                roleName = 'Coordinador';
+                target = 'pages/copage.html';
+              } else if (
+                email.includes('admin') ||
+                email.includes('administrador')
+              ) {
+                roleName = 'Administrador';
+                target = 'pages/adminpage.html';
+              }
+            }
+
+            if (!target || !roleName) {
+              message.style.color = '#b91c1c';
+              message.textContent =
+                'El email o la contraseña son invalidos, por favor introduzca una cuenta valida.';
+              form.classList.remove('shake');
+              void form.offsetWidth;
+              form.classList.add('shake');
+              return;
+            }
+
+            // validate password: 'password' + first 2 letters of role (lowercased)
+            const first2 = (roleName || '').slice(0, 2).toLowerCase();
+            const expected = 'password' + first2;
+            if (pwd !== expected) {
+              message.style.color = '#b91c1c';
+              message.textContent = `Contraseña incorrecta.`;
+              form.classList.remove('shake');
+              void form.offsetWidth;
+              form.classList.add('shake');
+              return;
+            }
+
+            // success
+            message.style.color = 'var(--muted)';
+            message.textContent = 'Accediendo — redirigiendo...';
+            if (remember) {
+              localStorage.setItem('sessionUser', email);
+              localStorage.setItem('userRole', roleName);
+              localStorage.setItem('userHomePage', target);
+            }
+            setTimeout(function () {
+              window.location.href = target;
+            }, 600);
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
